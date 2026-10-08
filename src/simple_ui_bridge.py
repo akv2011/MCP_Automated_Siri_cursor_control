@@ -219,4 +219,4 @@ if __name__ == "__main__":
     print("📝 Method: Direct UI automation (no fake MCP)")
     print("🌐 Server: http://localhost:5002")
     
-    app.run(debug=False, host='0.0.0.0', port=5002)
+    app.run(debug=False, host='127.0.0.1', port=5002)

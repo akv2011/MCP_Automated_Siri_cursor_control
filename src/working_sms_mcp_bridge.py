@@ -4,11 +4,12 @@ SMS-Cursor MCP Bridge - Using FastMCP for reliable tool integration
 """
 
 from typing import Any
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import logging
 import os
 import subprocess
 import glob
+import shlex
 from datetime import datetime
 from twilio.rest import Client
 from dotenv import load_dotenv
@@ -21,14 +22,45 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sms-cursor-bridge")
 
 # Project directory
-PROJECT_DIR = r"C:\Users\arunk\Automated_Siri_cursor_control"
+PROJECT_DIR = os.getenv("PROJECT_DIR", os.getcwd())
 
 # Twilio Configuration
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
 
-# Initialize FastMCP server (same as weather server)
+
+READ_ONLY = {"ls": None, "grep": None, "find": None, "git": {"status", "log", "diff", "show", "branch"}}
+FIND_ACTIONS = {"-exec", "-execdir", "-ok", "-okdir", "-delete", "-fprint", "-fprint0", "-fprintf", "-fls"}
+GIT_BRANCH_FLAGS = {"-a", "-r", "-v", "-vv", "--all", "--remotes", "--list"}
+
+
+def allowed_numbers() -> set[str]:
+    return {n.strip() for n in os.getenv("ALLOWED_SENDERS", "").split(",") if n.strip()}
+
+
+def checked_recipient(number: str) -> str:
+    if number not in allowed_numbers():
+        raise PermissionError(f"{number} is not in ALLOWED_SENDERS")
+    return number
+
+
+def parse_command(command: str) -> list[str]:
+    """Split a command into argv and refuse anything that can write, delete or run other code."""
+    argv = shlex.split(command)
+    if not argv or argv[0] not in READ_ONLY:
+        raise PermissionError(f"only {', '.join(sorted(READ_ONLY))} are allowed")
+    if argv[0] == "git":
+        if len(argv) < 2 or argv[1] not in READ_ONLY["git"]:
+            raise PermissionError("git allows only status, log, diff, show and branch")
+        if any(a.startswith("--output") or a.startswith("--ext-diff") for a in argv):
+            raise PermissionError("git output redirection and external diff tools are not allowed")
+        if argv[1] == "branch" and not set(argv[2:]) <= GIT_BRANCH_FLAGS:
+            raise PermissionError("git branch is list-only")
+    if argv[0] == "find" and FIND_ACTIONS & set(argv):
+        raise PermissionError("find actions that run, delete or write files are not allowed")
+    return argv
+
 mcp = FastMCP("sms-cursor-bridge")
 
 @mcp.tool()
@@ -244,21 +276,13 @@ async def run_command(command: str) -> str:
     logger.info(f"Running command: {command}")
     
     try:
-        # Security: Only allow certain safe commands
-        safe_commands = ['git', 'python', 'pip', 'node', 'npm', 'ls', 'dir', 'find', 'grep']
-        
-        if not any(command.strip().startswith(safe_cmd) for safe_cmd in safe_commands):
-            return f"❌ Command not allowed for security reasons: {command}"
-        
-        result = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            cwd=PROJECT_DIR
-        )
-        
+        argv = parse_command(command)
+    except (PermissionError, ValueError) as e:
+        return f"Command not allowed: {e}"
+
+    try:
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=30, cwd=PROJECT_DIR)
+
         output = f"🖥️ Command: {command}\n"
         output += f"Exit code: {result.returncode}\n\n"
         
@@ -298,10 +322,10 @@ async def send_sms_response(phone_number: str, message: str) -> str:
         message_instance = client.messages.create(
             body=message,
             from_=TWILIO_PHONE_NUMBER,
-            to="+917007646200"
+            to=checked_recipient(phone_number)
         )
         
-        return f"✅ SMS sent successfully to +917007646200\nMessage SID: {message_instance.sid}"
+        return f"✅ SMS sent successfully to {phone_number}\nMessage SID: {message_instance.sid}"
         
     except Exception as e:
         return f"❌ Failed to send SMS: {str(e)}"
@@ -347,10 +371,10 @@ async def send_completion_summary(phone_number: str, original_request: str, resu
         message_instance = client.messages.create(
             body=summary,
             from_=TWILIO_PHONE_NUMBER,
-            to="+917007646200"
+            to=checked_recipient(phone_number)
         )
         
-        return f"Summary sent to +917007646200, SID: {message_instance.sid}, Length: {len(summary)} chars"
+        return f"Summary sent to {phone_number}, SID: {message_instance.sid}, Length: {len(summary)} chars"
         
     except Exception as e:
         return f"Failed to send summary: {str(e)}"
@@ -393,10 +417,10 @@ async def send_summary_message(phone_number: str, message_type: str, content: st
         message_instance = client.messages.create(
             body=message,
             from_=TWILIO_PHONE_NUMBER,
-            to="+917007646200"
+            to=checked_recipient(phone_number)
         )
         
-        return f"Message sent to +917007646200, Type: {message_type}, SID: {message_instance.sid}"
+        return f"Message sent to {phone_number}, Type: {message_type}, SID: {message_instance.sid}"
         
     except Exception as e:
         return f"Failed to send message: {str(e)}"

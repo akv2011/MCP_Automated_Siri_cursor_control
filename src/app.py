@@ -5,9 +5,13 @@ This Flask app receives SMS messages via Twilio webhooks, processes them with Go
 and executes corresponding actions in the Cursor AI editor.
 """
 
+import hmac
+import html
+
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
+from twilio.request_validator import RequestValidator
 import os
 from google import genai
 from google.genai import types
@@ -62,6 +66,58 @@ if twilio_account_sid and twilio_auth_token:
 else:
     twilio_client = None
     print("⚠️ Twilio credentials not found - SMS sending disabled")
+
+OWNER_PHONE = os.getenv('OWNER_PHONE', '')
+ADMIN_COOKIE = 'admin_token'
+
+
+def allowed_numbers():
+    return {n.strip() for n in os.getenv('ALLOWED_SENDERS', '').split(',') if n.strip()}
+
+
+def admin_token_ok(req):
+    expected = os.getenv('ADMIN_TOKEN', '')
+    given = req.headers.get('X-Admin-Token') or req.args.get('token') or req.cookies.get(ADMIN_COOKIE) or ''
+    return bool(expected) and hmac.compare_digest(given, expected)
+
+
+def twilio_signature_ok(req):
+    auth_token = os.getenv('TWILIO_AUTH_TOKEN', '')
+    if not auth_token:
+        return False
+    # Behind ngrok the request URL is localhost, but Twilio signs the public URL it called.
+    public = os.getenv('PUBLIC_URL', '').rstrip('/')
+    url = public + req.full_path.rstrip('?') if public else req.url
+    return RequestValidator(auth_token).validate(url, req.form.to_dict(), req.headers.get('X-Twilio-Signature', ''))
+
+
+def create_message(body, from_, to):
+    """The only path to Twilio, so no route or tool can text a number outside ALLOWED_SENDERS."""
+    if to not in allowed_numbers():
+        raise PermissionError(f"{to} is not in ALLOWED_SENDERS")
+    return twilio_client.messages.create(body=body, from_=from_, to=to)
+
+
+@app.before_request
+def guard():
+    if request.path == '/sms':
+        if not twilio_signature_ok(request):
+            return 'invalid Twilio signature', 403
+        if request.values.get('From', '') not in allowed_numbers():
+            return 'sender not allowed', 403
+        return None
+    if not admin_token_ok(request):
+        return 'admin token required: set ADMIN_TOKEN and open /?token=<ADMIN_TOKEN>', 403
+    return None
+
+
+@app.after_request
+def remember_admin(response):
+    token = request.args.get('token')
+    if token and admin_token_ok(request):
+        response.set_cookie(ADMIN_COOKIE, token, httponly=True, samesite='Strict', secure=request.is_secure)
+    return response
+
 
 def process_with_gemini(message):
     """Process the SMS message with Gemini to determine action"""
@@ -281,7 +337,7 @@ def send_sms_response(to_number, message):
         if not twilio_client:
             return "SMS response disabled - no Twilio credentials"
         
-        message = twilio_client.messages.create(
+        message = create_message(
             body=message,
             from_=twilio_phone_number,
             to=to_number
@@ -355,7 +411,7 @@ def home():
     </head>
     <body>
         <h1>🚀 SMS-to-Cursor Automation Dashboard</h1>
-        <div class="status">✅ Server Running | 📱 Twilio: +14322000592 | 💻 Bridge: Active</div>
+        <div class="status">✅ Server Running | 📱 Twilio connected | 💻 Bridge: Active</div>
         
         <div class="stats">
             <div class="stat-box">
@@ -433,9 +489,9 @@ def trigger_automation():
         
         return f"""
         <h2>✅ Automation Triggered Successfully!</h2>
-        <p><strong>Command:</strong> {message}</p>
-        <p><strong>Action:</strong> {action_data.description}</p>
-        <p><strong>Result:</strong> {result}</p>
+        <p><strong>Command:</strong> {html.escape(message)}</p>
+        <p><strong>Action:</strong> {html.escape(action_data.description)}</p>
+        <p><strong>Result:</strong> {html.escape(result)}</p>
         <a href='/'>← Back to Dashboard</a>
         """
         
@@ -443,7 +499,7 @@ def trigger_automation():
         add_log('ERROR', f'Trigger error: {str(e)}', action='Manual Trigger')
         return f"""
         <h2>❌ Error</h2>
-        <p>{str(e)}</p>
+        <p>{html.escape(str(e))}</p>
         <a href='/'>← Back to Dashboard</a>
         """
 
@@ -480,7 +536,7 @@ def clear_logs():
 def send_sms():
     """Send SMS FROM Twilio number to trigger automation"""
     message = request.args.get('message', 'Create a hello world Python script')
-    to_number = request.args.get('to', '+917007646200')  # Valid verified number
+    to_number = request.args.get('to', OWNER_PHONE)
     
     if not twilio_client:
         return """
@@ -491,7 +547,7 @@ def send_sms():
     
     try:
         # Send SMS FROM your Twilio number
-        sms = twilio_client.messages.create(
+        sms = create_message(
             body=message,
             from_=twilio_phone_number,
             to=to_number
@@ -499,9 +555,9 @@ def send_sms():
         
         return f"""
         <h2>✅ SMS Sent Successfully!</h2>
-        <p><strong>Message:</strong> {message}</p>
+        <p><strong>Message:</strong> {html.escape(message)}</p>
         <p><strong>From:</strong> {twilio_phone_number}</p>
-        <p><strong>To:</strong> {to_number}</p>
+        <p><strong>To:</strong> {html.escape(to_number)}</p>
         <p><strong>SID:</strong> {sms.sid}</p>
         <p>The webhook should trigger automatically when Twilio processes this message!</p>
         <a href='/'>Go back</a>
@@ -510,7 +566,7 @@ def send_sms():
     except Exception as e:
         return f"""
         <h2>❌ SMS Send Failed</h2>
-        <p><strong>Error:</strong> {str(e)}</p>
+        <p><strong>Error:</strong> {html.escape(str(e))}</p>
         <a href='/'>Go back</a>
         """
 
@@ -623,7 +679,7 @@ def test_bridge():
     except Exception as e:
         return f"""
         <h2>❌ Bridge Test Failed</h2>
-        <p><strong>Error:</strong> {str(e)}</p>
+        <p><strong>Error:</strong> {html.escape(str(e))}</p>
         <p>Simple Cursor Bridge is not running on port 5001</p>
         <br>
         <h3>To Fix:</h3>
@@ -640,7 +696,7 @@ def api_send_sms():
     """API endpoint to send SMS responses - processes message and sends SMS back"""
     data = request.get_json()
     message = data.get('message', '')
-    from_number = data.get('from', '+14322000592')
+    from_number = data.get('from', OWNER_PHONE)
     
     if not message:
         return {'success': False, 'error': 'No message provided'}
@@ -658,7 +714,7 @@ def api_send_sms():
         if twilio_client:
             try:
                 response_msg = f"COMPLETED: {action_data.description}\nRESULT: {result[:100]}..."
-                sms = twilio_client.messages.create(
+                sms = create_message(
                     body=response_msg,
                     from_=twilio_phone_number,
                     to=from_number
@@ -704,7 +760,7 @@ def api_sms_challenge():
     """API endpoint for SMS challenge mode - uses MCP tools and sends detailed SMS"""
     data = request.get_json()
     message = data.get('message', '')
-    from_number = data.get('from', '+14322000592')
+    from_number = data.get('from', OWNER_PHONE)
     
     if not message:
         return {'success': False, 'error': 'No message provided'}
@@ -722,7 +778,7 @@ def api_sms_challenge():
                 min_lines = int(numbers[0]) if numbers else 300
                 
                 # Direct MCP tool call
-                command = f"complete_sms_task(phone_number='+917007646200', original_request='Find files over {min_lines} lines', task_type='find_large_files', min_lines={min_lines})"
+                command = f"complete_sms_task(phone_number='{OWNER_PHONE}', original_request='Find files over {min_lines} lines', task_type='find_large_files', min_lines={min_lines})"
                 
                 # Instead of trying to get bridge response, return hardcoded analysis
                 timestamp = datetime.now().strftime('%H:%M')
@@ -738,13 +794,13 @@ Large Files Analysis (>{min_lines} lines):
 Found 2 large files:
 
 1. src\\app.py (1,262 lines)
-2. fixed_sms_mcp_bridge.py (459 lines)
+2. working_sms_mcp_bridge.py
 
 Automated via SMS bridge"""
                 
             elif 'count tests' in message.lower():
                 # MCP command for counting tests
-                command = f"complete_sms_task(phone_number='+917007646200', original_request='Count test files', task_type='count_tests')"
+                command = f"complete_sms_task(phone_number='{OWNER_PHONE}', original_request='Count test files', task_type='count_tests')"
                 
                 timestamp = datetime.now().strftime('%H:%M')
                 hardcoded_response = f"""Sent from your Twilio trial account - SMS-to-Cursor Complete ({timestamp})
@@ -770,7 +826,7 @@ Framework: Standard unittest/pytest patterns
 Automated via SMS bridge"""
                 
             elif 'analyze codebase' in message.lower():
-                command = f"complete_sms_task(phone_number='+917007646200', original_request='Analyze codebase', task_type='analyze_codebase')"
+                command = f"complete_sms_task(phone_number='{OWNER_PHONE}', original_request='Analyze codebase', task_type='analyze_codebase')"
                 
                 timestamp = datetime.now().strftime('%H:%M')
                 hardcoded_response = f"""Sent from your Twilio trial account - SMS-to-Cursor Complete ({timestamp})
@@ -857,7 +913,7 @@ Automated via SMS bridge"""
             if twilio_client:
                 try:
                     challenge_msg = f"CHALLENGE RESULT\nCOMPLETED: {action_data.description}\nANALYSIS: {result[:120]}..."
-                    sms = twilio_client.messages.create(
+                    sms = create_message(
                         body=challenge_msg,
                         from_=twilio_phone_number,
                         to=from_number
@@ -903,4 +959,5 @@ Automated via SMS bridge"""
 # Phone UI endpoint removed - keeping only core MCP functionality
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # ngrok forwards to localhost, so nothing needs the app on other interfaces.
+    app.run(debug=os.getenv('FLASK_DEBUG') == '1', host='127.0.0.1', port=5000)
