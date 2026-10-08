@@ -79,7 +79,7 @@ MCP Inspector:
 npx @modelcontextprotocol/inspector /path/to/MCP_Automated_Siri_cursor_control/.venv/bin/python /path/to/MCP_Automated_Siri_cursor_control/src/working_sms_mcp_bridge.py
 ```
 
-Checked on 2026-10-08: Claude Code 2.1.294 connects and MCP Inspector lists all 11 tools; Codex CLI 0.156.1 and Gemini CLI 0.63.0 accept the config.
+Checked on 2026-10-08: Claude Code 2.1.294 connects and MCP Inspector lists all 11 tools; Codex CLI 0.156.1 accepts the config; Gemini CLI 0.63.0 ran headless and called `count_tests`, which listed the repo's test file. Gemini CLI marks servers "Disabled" in a folder it does not trust; trust the folder or pass `--skip-trust`.
 
 ## Tests
 
