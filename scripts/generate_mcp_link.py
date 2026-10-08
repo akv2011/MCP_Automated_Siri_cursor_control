@@ -1,17 +1,19 @@
 """
 MCP Install Link Generator for SMS Cursor Bridge
 """
-import json
 import base64
+import json
+import sys
+from pathlib import Path
+
+BRIDGE = Path(__file__).resolve().parent.parent / "src" / "working_sms_mcp_bridge.py"
 
 def generate_mcp_install_link():
     # MCP Server configuration
     config = {
         "sms-cursor-bridge": {
-            "command": "python",
-            "args": [
-                "c:\\Users\\arunk\\Automated_Siri_cursor_control\\sms_mcp_bridge.py"
-            ]
+            "command": sys.executable,
+            "args": [str(BRIDGE)]
         }
     }
     

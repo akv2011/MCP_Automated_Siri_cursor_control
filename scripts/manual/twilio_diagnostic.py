@@ -38,9 +38,9 @@ try:
     
     print(f"\n🧪 Test SMS Send:")
     print(f"FROM: {TWILIO_PHONE_NUMBER}")
-    print(f"TO: +917007646200")
+    print(f"TO: {os.getenv('OWNER_PHONE', '')}")
     
-    if TWILIO_PHONE_NUMBER == "+917007646200":
+    if TWILIO_PHONE_NUMBER == os.getenv("OWNER_PHONE", ""):
         print("❌ ERROR: FROM and TO numbers are the same!")
     else:
         print("✅ Numbers are different - should work")

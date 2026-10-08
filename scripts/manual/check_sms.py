@@ -3,14 +3,16 @@
 Quick test script for SMS automation
 """
 
+import os
+
 def test_phone_numbers():
     """Test that phone numbers are valid"""
     
     # Your Twilio phone number (sends FROM)
-    twilio_number = "+12295970631"
+    twilio_number = os.getenv("TWILIO_PHONE_NUMBER", "")
     
     # Target phone number (sends TO) 
-    target_number = "+917007646200"
+    target_number = os.getenv("OWNER_PHONE", "")
     
     print("📱 SMS Automation Test")
     print("=" * 40)

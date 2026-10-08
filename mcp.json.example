@@ -1,15 +1,15 @@
 {
   "mcpServers": {
     "sms-cursor-bridge": {
-      "command": "C:/ProgramData/miniconda3/Scripts/conda.exe",
-      "args": [
-        "run",
-        "-p",
-        "C:\\Users\\arunk\\.conda\\envs\\siri",
-        "--no-capture-output",
-        "python",
-        "c:\\Users\\arunk\\Automated_Siri_cursor_control\\working_sms_mcp_bridge.py"
-      ]
+      "command": "/path/to/MCP_Automated_Siri_cursor_control/.venv/bin/python",
+      "args": ["/path/to/MCP_Automated_Siri_cursor_control/src/working_sms_mcp_bridge.py"],
+      "env": {
+        "PROJECT_DIR": "/path/to/the/project/the/tools/inspect",
+        "ALLOWED_SENDERS": "+15551234567",
+        "TWILIO_ACCOUNT_SID": "your_account_sid",
+        "TWILIO_AUTH_TOKEN": "your_auth_token",
+        "TWILIO_PHONE_NUMBER": "+15557654321"
+      }
     }
   }
 }
