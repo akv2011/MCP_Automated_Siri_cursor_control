@@ -23,12 +23,12 @@ class SimpleCursorBridge:
     def __init__(self):
         # Disable pyautogui failsafe for better automation
         pyautogui.FAILSAFE = False
-        logger.info("🖱️ Simple UI Automation Bridge initialized")
+        logger.info("Simple UI Automation Bridge initialized")
     
     def send_to_cursor(self, message):
         """Send message to Cursor via UI automation"""
         try:
-            logger.info(f"🚀 Sending to Cursor: {message[:50]}...")
+            logger.info(f"Sending to Cursor: {message[:50]}...")
             
             # Step 1: Find and activate Cursor
             if not self.activate_cursor():
@@ -38,12 +38,12 @@ class SimpleCursorBridge:
                 }
             
             # Step 2: Open chat with Ctrl+L
-            logger.info("📱 Opening Cursor chat...")
+            logger.info("Opening Cursor chat...")
             pyautogui.hotkey('ctrl', 'l')
             time.sleep(2)
             
             # Step 3: Clear and type message
-            logger.info("⌨️ Typing message...")
+            logger.info("Typing message...")
             pyautogui.hotkey('ctrl', 'a')  # Select all
             time.sleep(0.5)
             pyautogui.press('delete')      # Clear
@@ -52,12 +52,12 @@ class SimpleCursorBridge:
             time.sleep(1)
             
             # Step 4: Send message
-            logger.info("📤 Sending message...")
+            logger.info("Sending message...")
             pyautogui.press('enter')
-            logger.info("✅ Message sent to Cursor!")
+            logger.info("OK Message sent to Cursor!")
             
             # Step 5: Wait for response
-            logger.info("⏳ Waiting for Cursor response...")
+            logger.info("Waiting for Cursor response...")
             time.sleep(8)  # Give Cursor time to respond
             
             # Step 6: Try to collect response
@@ -66,13 +66,13 @@ class SimpleCursorBridge:
             return {
                 "success": True,
                 "method": "ui_automation_simple",
-                "message": "✅ Message sent to Cursor via UI automation",
+                "message": "OK Message sent to Cursor via UI automation",
                 "cursor_response": response_text,
                 "timestamp": datetime.now().isoformat()
             }
             
         except Exception as e:
-            logger.error(f"❌ UI automation failed: {e}")
+            logger.error(f"ERROR UI automation failed: {e}")
             return {
                 "success": False, 
                 "error": f"UI automation error: {str(e)}"
@@ -100,21 +100,21 @@ class SimpleCursorBridge:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                 win32gui.SetForegroundWindow(hwnd)
                 time.sleep(1)
-                logger.info(f"✅ Activated Cursor: {title}")
+                logger.info(f"OK Activated Cursor: {title}")
                 return True
             else:
-                logger.error("❌ No Cursor window found")
+                logger.error("ERROR No Cursor window found")
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ Error activating Cursor: {e}")
+            logger.error(f"ERROR Error activating Cursor: {e}")
             return False
     
     def collect_response(self, original_message):
         """Simple response collection"""
         try:
             # Try to get clipboard content after Cursor responds
-            logger.info("📋 Attempting to collect response...")
+            logger.info("Attempting to collect response...")
             
             # Method 1: Try to select and copy last response
             pyautogui.hotkey('ctrl', 'a')  # Select all in chat
@@ -126,15 +126,15 @@ class SimpleCursorBridge:
             clipboard_text = self.get_clipboard_content()
             
             if clipboard_text and len(clipboard_text) > 20:
-                logger.info(f"✅ Collected {len(clipboard_text)} characters from Cursor")
+                logger.info(f"OK Collected {len(clipboard_text)} characters from Cursor")
                 return clipboard_text[-200:]  # Return last 200 chars
             else:
-                logger.info("📝 No response collected, using default")
-                return f"✅ Cursor processed: '{original_message[:30]}...'"
+                logger.info("No response collected, using default")
+                return f"OK Cursor processed: '{original_message[:30]}...'"
                 
         except Exception as e:
             logger.warning(f"Response collection failed: {e}")
-            return f"✅ Message sent to Cursor: '{original_message[:30]}...'"
+            return f"OK Message sent to Cursor: '{original_message[:30]}...'"
     
     def get_clipboard_content(self):
         """Get clipboard content"""
@@ -165,21 +165,21 @@ bridge = SimpleCursorBridge()
 @app.route('/')
 def home():
     return """
-    <h1>🖱️ Simple UI Automation Bridge</h1>
+    <h1>Simple UI Automation Bridge</h1>
     <p><strong>Status:</strong> Running</p>
     <p><strong>Method:</strong> Direct UI Automation (No fake MCP)</p>
     
     <h3>Test Interface:</h3>
     <form action="/inject" method="post">
         <input type="text" name="message" placeholder="Create a Python hello world script" style="width: 400px; padding: 8px;">
-        <button type="submit" style="padding: 8px 16px;">🖱️ Send to Cursor</button>
+        <button type="submit" style="padding: 8px 16px;">Send to Cursor</button>
     </form>
     
     <h3>Requirements:</h3>
     <ul>
-        <li>✅ Cursor must be open and visible</li>
-        <li>✅ UI automation will activate Cursor window</li>
-        <li>✅ Message will be typed into Cursor chat</li>
+        <li>OK Cursor must be open and visible</li>
+        <li>OK UI automation will activate Cursor window</li>
+        <li>OK Message will be typed into Cursor chat</li>
     </ul>
     """
 
@@ -215,8 +215,8 @@ def health():
     })
 
 if __name__ == "__main__":
-    print("🖱️ Simple UI Automation Bridge starting...")
-    print("📝 Method: Direct UI automation (no fake MCP)")
-    print("🌐 Server: http://localhost:5002")
+    print("Simple UI Automation Bridge starting...")
+    print("Method: Direct UI automation (no fake MCP)")
+    print("Server: http://localhost:5002")
     
     app.run(debug=False, host='127.0.0.1', port=5002)

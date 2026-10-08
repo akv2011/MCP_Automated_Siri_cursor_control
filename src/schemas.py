@@ -33,6 +33,6 @@ class SMSResponse(BaseModel):
     def to_sms_format(self) -> str:
         """Convert to SMS-friendly format"""
         if self.success:
-            return f"✅ {self.message}"
+            return f"OK {self.message}"
         else:
-            return f"❌ {self.message}"
+            return f"ERROR {self.message}"

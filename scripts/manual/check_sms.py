@@ -14,22 +14,22 @@ def test_phone_numbers():
     # Target phone number (sends TO) 
     target_number = os.getenv("OWNER_PHONE", "")
     
-    print("📱 SMS Automation Test")
+    print("SMS Automation Test")
     print("=" * 40)
-    print(f"✅ Twilio Number (FROM): {twilio_number}")
-    print(f"✅ Target Number (TO): {target_number}")
+    print(f"OK Twilio Number (FROM): {twilio_number}")
+    print(f"OK Target Number (TO): {target_number}")
     print()
     
     # Test URLs
     ngrok_url = "https://c85d8a437f93.ngrok-free.app"
     
-    print("🔗 Test URLs:")
+    print("Test URLs:")
     print(f"• Webhook Test: {ngrok_url}/send_and_trigger?message=Create a Python hello world script")
     print(f"• Simulation: {ngrok_url}/simulate_sms?message=Test message&from={target_number}")
     print(f"• Dashboard: {ngrok_url}/")
     print()
     
-    print("🧪 Manual Twilio SMS Command:")
+    print("Manual Twilio SMS Command:")
     print("curl 'https://api.twilio.com/2010-04-01/Accounts/AC839d163e6ec7a6a3dcc6af759a8504bb/Messages.json' \\")
     print("  -X POST \\")
     print(f"  --data-urlencode 'To={target_number}' \\")

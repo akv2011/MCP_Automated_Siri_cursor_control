@@ -32,7 +32,7 @@ def test_gemini_processing():
     ]
     
     for message in test_messages:
-        print(f"\n🔍 Testing message: '{message}'")
+        print(f"\nTesting message: '{message}'")
         
         prompt = f"""
         You are an AI assistant that processes SMS messages to perform code actions in Cursor editor.
@@ -65,7 +65,7 @@ def test_gemini_processing():
                     thinking_config=types.ThinkingConfig(thinking_budget=0)  # Disable thinking for faster response
                 )
             )
-            print(f"📄 Raw response: {response.text}")
+            print(f"Raw response: {response.text}")
             
             # Try to parse as JSON and validate with Pydantic
             try:
@@ -83,28 +83,28 @@ def test_gemini_processing():
                 
                 # Parse raw JSON
                 raw_data = json.loads(response_text)
-                print(f"📄 Raw JSON: {json.dumps(raw_data, indent=2)}")
+                print(f"Raw JSON: {json.dumps(raw_data, indent=2)}")
                 
                 # Validate with Pydantic
                 action_data = CursorAction(**raw_data)
-                print(f"✅ Validated action: {action_data.action}")
-                print(f"📋 Description: {action_data.description}")
-                print(f"⚙️  Command: {action_data.command}")
+                print(f"OK Validated action: {action_data.action}")
+                print(f"Description: {action_data.description}")
+                print(f" Command: {action_data.command}")
                 if action_data.file_path:
-                    print(f"📁 File path: {action_data.file_path}")
+                    print(f"File path: {action_data.file_path}")
                     
             except ValidationError as e:
-                print(f"❌ Pydantic validation error: {e}")
+                print(f"ERROR Pydantic validation error: {e}")
             except json.JSONDecodeError as e:
-                print(f"❌ JSON parse error: {e}")
+                print(f"ERROR JSON parse error: {e}")
                 
         except Exception as e:
-            print(f"❌ Gemini API error: {e}")
+            print(f"ERROR Gemini API error: {e}")
 
 if __name__ == '__main__':
     if not os.getenv('GEMINI_API_KEY'):
-        print("❌ GEMINI_API_KEY not found in environment variables")
+        print("ERROR GEMINI_API_KEY not found in environment variables")
         print("Please create a .env file with your Gemini API key")
     else:
-        print("🚀 Starting Gemini integration test...")
+        print("Starting Gemini integration test...")
         test_gemini_processing()

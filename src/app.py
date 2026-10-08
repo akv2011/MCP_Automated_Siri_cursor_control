@@ -47,7 +47,7 @@ def add_log(log_type, message, phone_number=None, action=None, result=None):
     if len(activity_logs) > MAX_LOGS:
         activity_logs.pop(0)
     
-    print(f"📝 LOG: [{log_type}] {message}")
+    print(f"LOG: [{log_type}] {message}")
 
 # Configure Gemini API - New SDK needs explicit API key configuration
 api_key = os.getenv('GEMINI_API_KEY')
@@ -65,7 +65,7 @@ if twilio_account_sid and twilio_auth_token:
     twilio_client = Client(twilio_account_sid, twilio_auth_token)
 else:
     twilio_client = None
-    print("⚠️ Twilio credentials not found - SMS sending disabled")
+    print("WARNING Twilio credentials not found - SMS sending disabled")
 
 OWNER_PHONE = os.getenv('OWNER_PHONE', '')
 ADMIN_COOKIE = 'admin_token'
@@ -170,7 +170,7 @@ def process_with_gemini(message):
         
         # Parse the JSON response from Gemini
         response_text = response.text.strip()
-        print(f"🤖 Raw Gemini response: {response_text}")
+        print(f"Raw Gemini response: {response_text}")
         
         # Remove markdown code blocks if present
         if response_text.startswith('```json'):
@@ -237,14 +237,14 @@ def perform_cursor_action(action_data: CursorAction):
                     bridge_url = "http://localhost:5001/inject"
                     bridge_name = "Simple Bridge"
                 else:
-                    return f"❌ No Cursor Bridge available (tried ports 5001, 5002)"
+                    return f"ERROR No Cursor Bridge available (tried ports 5001, 5002)"
             except:
-                return f"❌ No Cursor Bridge responding"
+                return f"ERROR No Cursor Bridge responding"
         
         # Prepend a clear instruction prefix
         message = f"SMS Request: {command}"
         
-        print(f"🔍 DEBUG: Using {bridge_name}: {message[:50]}...")
+        print(f"DEBUG: Using {bridge_name}: {message[:50]}...")
         
         bridge_response = requests.post(
             bridge_url,
@@ -256,12 +256,12 @@ def perform_cursor_action(action_data: CursorAction):
             timeout=60  # Increased timeout for response collection
         )
         
-        print(f"🔍 DEBUG: {bridge_name} response status: {bridge_response.status_code}")
+        print(f"DEBUG: {bridge_name} response status: {bridge_response.status_code}")
         
         if bridge_response.status_code == 200:
             bridge_result = bridge_response.json()
             
-            print(f"🔍 DEBUG: Bridge result: {bridge_result}")
+            print(f"DEBUG: Bridge result: {bridge_result}")
             
             # Check for successful execution
             if bridge_result.get("success", True):
@@ -269,20 +269,20 @@ def perform_cursor_action(action_data: CursorAction):
                 
                 # If we got a good response, return it
                 if cursor_response and len(cursor_response) > 10:
-                    return f"✅ CURSOR ({bridge_result.get('method', 'unknown')}): {cursor_response}"
+                    return f"OK CURSOR ({bridge_result.get('method', 'unknown')}): {cursor_response}"
                 else:
-                    return f"✅ Message sent via {bridge_name} successfully"
+                    return f"OK Message sent via {bridge_name} successfully"
             else:
-                return f"❌ {bridge_name} error: {bridge_result.get('error', 'Unknown error')}"
+                return f"ERROR {bridge_name} error: {bridge_result.get('error', 'Unknown error')}"
         else:
-            return f"❌ {bridge_name} failed (status: {bridge_response.status_code})"
+            return f"ERROR {bridge_name} failed (status: {bridge_response.status_code})"
             
     except requests.exceptions.ConnectionError:
-        return f"❌ Cannot connect to Cursor Bridge. Make sure enhanced_cursor_bridge.py is running on port 5002"
+        return f"ERROR Cannot connect to Cursor Bridge. Make sure enhanced_cursor_bridge.py is running on port 5002"
     except requests.exceptions.Timeout:
-        return f"❌ Timeout connecting to Cursor Bridge"
+        return f"ERROR Timeout connecting to Cursor Bridge"
     except Exception as e:
-        return f"❌ Error connecting to Cursor bridge: {str(e)}"
+        return f"ERROR Error connecting to Cursor bridge: {str(e)}"
 
 def generate_result_summary(original_message, action_data, cursor_result):
     """Generate a detailed summary of what was actually accomplished"""
@@ -342,9 +342,9 @@ def send_sms_response(to_number, message):
             from_=twilio_phone_number,
             to=to_number
         )
-        return f"✅ SMS sent to {to_number}: {message.sid}"
+        return f"OK SMS sent to {to_number}: {message.sid}"
     except Exception as e:
-        return f"❌ SMS send failed: {str(e)}"
+        return f"ERROR SMS send failed: {str(e)}"
 
 @app.route('/')
 def home():
@@ -388,9 +388,9 @@ def home():
                             logDiv.innerHTML = `
                                 <div class="log-time">${log.timestamp}</div>
                                 <div class="log-message">${log.message}</div>
-                                ${log.phone_number ? `<div class="log-details">📱 ${log.phone_number}</div>` : ''}
-                                ${log.action ? `<div class="log-details">🎯 ${log.action}</div>` : ''}
-                                ${log.result ? `<div class="log-details">📄 ${log.result}</div>` : ''}
+                                ${log.phone_number ? `<div class="log-details">${log.phone_number}</div>` : ''}
+                                ${log.action ? `<div class="log-details">${log.action}</div>` : ''}
+                                ${log.result ? `<div class="log-details">${log.result}</div>` : ''}
                             `;
                             logsContainer.appendChild(logDiv);
                         });
@@ -410,8 +410,8 @@ def home():
         </script>
     </head>
     <body>
-        <h1>🚀 SMS-to-Cursor Automation Dashboard</h1>
-        <div class="status">✅ Server Running | 📱 Twilio connected | 💻 Bridge: Active</div>
+        <h1>SMS-to-Cursor Automation Dashboard</h1>
+        <div class="status">OK Server Running | Twilio connected | Bridge: Active</div>
         
         <div class="stats">
             <div class="stat-box">
@@ -430,33 +430,33 @@ def home():
         
         <div class="container">
             <div class="section">
-                <h3>🧪 Quick Test</h3>
+                <h3>Quick Test</h3>
                 <p>Test automation instantly:</p>
                 <form action="/trigger" method="post">
                     <input type="text" name="message" placeholder="Create a Python hello world script" value="Create a Python hello world script">
-                    <button type="submit" class="btn btn-primary">🚀 Test Now</button>
+                    <button type="submit" class="btn btn-primary">Test Now</button>
                 </form>
             </div>
             
             <div class="section">
-                <h3>🎯 SMS and MCP Integration</h3>
+                <h3>SMS and MCP Integration</h3>
                 <p>Core functionality - SMS webhooks and MCP tools:</p>
                 <p>Test Cursor Bridge:</p>
-                <a href="/test_bridge" class="btn btn-primary">🔧 Test Bridge</a>
+                <a href="/test_bridge" class="btn btn-primary">Test Bridge</a>
                 <br><br>
-                <a href="/clear_logs" class="btn btn-danger">🗑️ Clear Logs</a>
+                <a href="/clear_logs" class="btn btn-danger">Clear Logs</a>
             </div>
         </div>
         
         <div class="section logs-section">
-            <h3>📋 Activity Logs <button onclick="refreshLogs()" class="btn btn-primary" style="float: right;">🔄 Refresh</button></h3>
+            <h3>Activity Logs <button onclick="refreshLogs()" class="btn btn-primary" style="float: right;">Refresh</button></h3>
             <div id="logs-container">
                 <div class="log-entry">Loading logs...</div>
             </div>
         </div>
         
         <div class="section">
-            <h3>📝 Example Commands:</h3>
+            <h3>Example Commands:</h3>
             <ul>
                 <li>"Create a Python hello world script"</li>
                 <li>"Write a calculator function"</li>
@@ -475,7 +475,7 @@ def trigger_automation():
     
     if not message:
         add_log('ERROR', 'No message provided for trigger', action='Manual Trigger')
-        return "<h2>❌ No message provided</h2><a href='/'>Go back</a>"
+        return "<h2>ERROR No message provided</h2><a href='/'>Go back</a>"
     
     try:
         add_log('ACTION_PERFORMED', f'Manual trigger: {message[:50]}...', action='Direct Test')
@@ -488,7 +488,7 @@ def trigger_automation():
                action=f'{action_data.action}', result=result[:100] + '...' if len(result) > 100 else result)
         
         return f"""
-        <h2>✅ Automation Triggered Successfully!</h2>
+        <h2>OK Automation Triggered Successfully!</h2>
         <p><strong>Command:</strong> {html.escape(message)}</p>
         <p><strong>Action:</strong> {html.escape(action_data.description)}</p>
         <p><strong>Result:</strong> {html.escape(result)}</p>
@@ -498,7 +498,7 @@ def trigger_automation():
     except Exception as e:
         add_log('ERROR', f'Trigger error: {str(e)}', action='Manual Trigger')
         return f"""
-        <h2>❌ Error</h2>
+        <h2>ERROR Error</h2>
         <p>{html.escape(str(e))}</p>
         <a href='/'>← Back to Dashboard</a>
         """
@@ -528,7 +528,7 @@ def clear_logs():
     activity_logs = []
     add_log('ACTION_PERFORMED', 'Logs cleared', action='System')
     return """
-    <h2>✅ Logs Cleared!</h2>
+    <h2>OK Logs Cleared!</h2>
     <a href='/'>← Back to Dashboard</a>
     """
 
@@ -540,7 +540,7 @@ def send_sms():
     
     if not twilio_client:
         return """
-        <h2>❌ Twilio Not Configured</h2>
+        <h2>ERROR Twilio Not Configured</h2>
         <p>Please add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN to your .env file</p>
         <a href='/'>Go back</a>
         """
@@ -554,7 +554,7 @@ def send_sms():
         )
         
         return f"""
-        <h2>✅ SMS Sent Successfully!</h2>
+        <h2>OK SMS Sent Successfully!</h2>
         <p><strong>Message:</strong> {html.escape(message)}</p>
         <p><strong>From:</strong> {twilio_phone_number}</p>
         <p><strong>To:</strong> {html.escape(to_number)}</p>
@@ -565,7 +565,7 @@ def send_sms():
         
     except Exception as e:
         return f"""
-        <h2>❌ SMS Send Failed</h2>
+        <h2>ERROR SMS Send Failed</h2>
         <p><strong>Error:</strong> {html.escape(str(e))}</p>
         <a href='/'>Go back</a>
         """
@@ -576,40 +576,40 @@ def sms_webhook():
     incoming_msg = request.values.get('Body', '').strip()
     from_number = request.values.get('From', '')
     
-    print(f"📱 SMS Received: '{incoming_msg}' from {from_number}")
+    print(f"SMS Received: '{incoming_msg}' from {from_number}")
     add_log('SMS_RECEIVED', f'Simulated SMS: {incoming_msg}', phone_number=from_number)
     
     try:
         # Process the message with Gemini
         action_data = process_with_gemini(incoming_msg)
-        print(f"🤖 Gemini processed: {action_data.action} - {action_data.description}")
+        print(f"Gemini processed: {action_data.action} - {action_data.description}")
         add_log('ACTION_PERFORMED', f'Processed: {action_data.description}', 
                phone_number=from_number, action=f'{action_data.action}')
         
         # Perform the action in Cursor
         result = perform_cursor_action(action_data)
-        print(f"✅ Action result: {result}")
+        print(f"OK Action result: {result}")
         add_log('ACTION_PERFORMED', f'Action completed: {action_data.description}', 
                phone_number=from_number, result=result[:100])
         
         # Create summary message for SMS response (like main app.py)
-        if "✅" in result:
-            status = "✅ SUCCESS"
+        if result.startswith("OK"):
+            status = "OK SUCCESS"
             summary = f"""
 {status}
-📱 SMS: "{incoming_msg[:30]}..."
-🎯 Action: {action_data.description}
-📄 Result: Message sent to Cursor AI
-🕐 Time: {datetime.now().strftime('%H:%M:%S')}
+SMS: "{incoming_msg[:30]}..."
+Action: {action_data.description}
+Result: Message sent to Cursor AI
+Time: {datetime.now().strftime('%H:%M:%S')}
             """.strip()
         else:
-            status = "❌ FAILED"
+            status = "ERROR FAILED"
             summary = f"""
 {status}
-📱 SMS: "{incoming_msg[:30]}..."
-🎯 Action: {action_data.description}
-❌ Error: {result[:50]}...
-🕐 Time: {datetime.now().strftime('%H:%M:%S')}
+SMS: "{incoming_msg[:30]}..."
+Action: {action_data.description}
+ERROR Error: {result[:50]}...
+Time: {datetime.now().strftime('%H:%M:%S')}
             """.strip()
         
         # Send SMS response back to sender
@@ -622,15 +622,15 @@ def sms_webhook():
         return str(resp)
         
     except Exception as e:
-        print(f"❌ Error processing SMS: {e}")
+        print(f"ERROR Error processing SMS: {e}")
         add_log('ERROR', f'SMS processing error: {str(e)}', phone_number=from_number)
         
         # Send error SMS (like main app.py)
         error_summary = f"""
-❌ SYSTEM ERROR
-📱 SMS: "{incoming_msg[:30]}..."
-⚠️ Error: {str(e)[:50]}...
-🕐 Time: {datetime.now().strftime('%H:%M:%S')}
+ERROR SYSTEM ERROR
+SMS: "{incoming_msg[:30]}..."
+WARNING Error: {str(e)[:50]}...
+Time: {datetime.now().strftime('%H:%M:%S')}
         """.strip()
         
         send_sms_response(from_number, error_summary)
@@ -662,7 +662,7 @@ def test_bridge():
         ))
         
         return f"""
-        <h2>🔧 Simple Cursor Bridge Test</h2>
+        <h2>Simple Cursor Bridge Test</h2>
         <p><strong>Bridge Health:</strong> {health_status}</p>
         <p><strong>Bridge Info:</strong> {info_data}</p>
         <p><strong>Test Message Result:</strong> {test_result}</p>
@@ -678,7 +678,7 @@ def test_bridge():
         
     except Exception as e:
         return f"""
-        <h2>❌ Bridge Test Failed</h2>
+        <h2>ERROR Bridge Test Failed</h2>
         <p><strong>Error:</strong> {html.escape(str(e))}</p>
         <p>Simple Cursor Bridge is not running on port 5001</p>
         <br>
@@ -836,7 +836,7 @@ Request: Analyze codebase structure and statistics
 Action: Performed complete codebase analysis
 
 Results:
-📊 Codebase Analysis Complete:
+Codebase Analysis Complete:
 
 Total files: 24
 Total directories: 5

@@ -15,7 +15,7 @@ TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
 
-print("🔍 Twilio Configuration Diagnostic")
+print("Twilio Configuration Diagnostic")
 print("=" * 40)
 print(f"Account SID: {TWILIO_ACCOUNT_SID}")
 print(f"From Number: {TWILIO_PHONE_NUMBER}")
@@ -27,23 +27,23 @@ try:
     
     # Get account info
     account = client.api.accounts(TWILIO_ACCOUNT_SID).fetch()
-    print(f"\n✅ Account Status: {account.status}")
-    print(f"✅ Account Type: {account.type}")
+    print(f"\nOK Account Status: {account.status}")
+    print(f"OK Account Type: {account.type}")
     
     # List phone numbers
-    print(f"\n📞 Available Phone Numbers:")
+    print(f"\nAvailable Phone Numbers:")
     incoming_numbers = client.incoming_phone_numbers.list()
     for number in incoming_numbers:
         print(f"  - {number.phone_number} ({number.friendly_name})")
     
-    print(f"\n🧪 Test SMS Send:")
+    print(f"\nTest SMS Send:")
     print(f"FROM: {TWILIO_PHONE_NUMBER}")
     print(f"TO: {os.getenv('OWNER_PHONE', '')}")
     
     if TWILIO_PHONE_NUMBER == os.getenv("OWNER_PHONE", ""):
-        print("❌ ERROR: FROM and TO numbers are the same!")
+        print("ERROR ERROR: FROM and TO numbers are the same!")
     else:
-        print("✅ Numbers are different - should work")
+        print("OK Numbers are different - should work")
         
 except Exception as e:
-    print(f"❌ Twilio Error: {e}")
+    print(f"ERROR Twilio Error: {e}")

@@ -17,7 +17,7 @@ class TodoList:
         
         print("\nTODO LIST:")
         for i, task in enumerate(self.tasks, 1):
-            status = "✓" if task["completed"] else " "
+            status = "OK" if task["completed"] else " "
             print(f"{i}. [{status}] {task['task']}")
             
     def complete_task(self, task_number):

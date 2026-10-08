@@ -45,7 +45,7 @@ def client(monkeypatch):
     monkeypatch.setattr(web, "twilio_client", fake)
     action = web.CursorAction(action=list(web.ActionType)[0], description="echo <b>hi</b>")
     monkeypatch.setattr(web, "process_with_gemini", lambda message: action)
-    monkeypatch.setattr(web, "perform_cursor_action", lambda data: "✅ done <script>alert(1)</script>")
+    monkeypatch.setattr(web, "perform_cursor_action", lambda data: "OK done <script>alert(1)</script>")
     web.app.config["TESTING"] = True
     with web.app.test_client() as c:
         c.fake = fake

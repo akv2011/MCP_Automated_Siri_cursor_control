@@ -10,7 +10,7 @@ from datetime import datetime
 def test_sms_challenge():
     """Test the complete SMS challenge workflow"""
     
-    print("🧪 Testing SMS Challenge Workflow\n")
+    print("Testing SMS Challenge Workflow\n")
     
     # Test scenarios
     test_cases = [
@@ -39,10 +39,10 @@ def test_sms_challenge():
     # Test URL (your SMS webhook)
     webhook_url = "http://localhost:5000/sms"
     
-    print("🔗 Testing SMS webhook endpoint...")
+    print("Testing SMS webhook endpoint...")
     
     for i, test_case in enumerate(test_cases, 1):
-        print(f"\n📱 Test {i}: {test_case['name']}")
+        print(f"\nTest {i}: {test_case['name']}")
         print(f"SMS: '{test_case['sms']}'")
         
         # Simulate SMS webhook
@@ -53,20 +53,20 @@ def test_sms_challenge():
         
         try:
             response = requests.post(webhook_url, data=data, timeout=10)
-            print(f"✅ Webhook response: {response.status_code}")
+            print(f"OK Webhook response: {response.status_code}")
             
             if response.status_code == 200:
-                print(f"✅ SMS processed successfully")
+                print(f"OK SMS processed successfully")
             else:
-                print(f"❌ Webhook failed: {response.text}")
+                print(f"ERROR Webhook failed: {response.text}")
                 
         except requests.exceptions.ConnectionError:
-            print(f"❌ SMS webhook not running on {webhook_url}")
+            print(f"ERROR SMS webhook not running on {webhook_url}")
             print("   Start it with: cd src && python app.py")
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"ERROR Error: {e}")
     
-    print(f"\n📋 Manual Testing Steps:")
+    print(f"\nManual Testing Steps:")
     print(f"1. Ensure SMS server is running: http://localhost:5000")
     print(f"2. Ensure MCP tools are loaded in Cursor")
     print(f"3. Send real SMS to your Twilio number")

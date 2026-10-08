@@ -75,7 +75,7 @@ async def sms_command(command: str) -> str:
     timestamp = datetime.now().strftime('%H:%M:%S')
     
     # Just return the command for Cursor to handle naturally  
-    return f"""📱 SMS Command received at {timestamp}: "{command}"
+    return f"""SMS Command received at {timestamp}: "{command}"
 
 Please process this SMS command and create any requested files or perform the requested actions."""
 
@@ -91,7 +91,7 @@ async def process_sms_request(sms_message: str) -> str:
     timestamp = datetime.now().strftime('%H:%M:%S')
     
     # Just return the SMS request for Cursor to process naturally
-    return f"""📱 SMS Request received at {timestamp}:
+    return f"""SMS Request received at {timestamp}:
 "{sms_message}"
 
 Please handle this request by creating the appropriate files or performing the requested actions. The SMS was sent to automate Cursor via SMS-to-Cursor bridge."""
@@ -109,13 +109,13 @@ async def cursor_automation(action: str, target: str = "") -> str:
     timestamp = datetime.now().strftime('%H%M%S')
     
     if action == "create":
-        return f"✅ Created {target} via SMS automation at {timestamp}"
+        return f"OK Created {target} via SMS automation at {timestamp}"
     elif action == "open":
-        return f"✅ Opened {target} via SMS automation at {timestamp}"
+        return f"OK Opened {target} via SMS automation at {timestamp}"
     elif action == "search":
-        return f"✅ Searched for {target} via SMS automation at {timestamp}"
+        return f"OK Searched for {target} via SMS automation at {timestamp}"
     else:
-        return f"✅ Performed {action} on {target} via SMS automation at {timestamp}"
+        return f"OK Performed {action} on {target} via SMS automation at {timestamp}"
 
 @mcp.tool()
 async def count_tests() -> str:
@@ -202,7 +202,7 @@ async def find_large_files(min_lines: int = 1000) -> str:
         return result
         
     except Exception as e:
-        return f"❌ Error finding large files: {str(e)}"
+        return f"ERROR Error finding large files: {str(e)}"
 
 @mcp.tool()
 async def analyze_codebase() -> str:
@@ -249,7 +249,7 @@ async def analyze_codebase() -> str:
                 except Exception:
                     continue
         
-        result = f"📊 Codebase Analysis Complete:\n\n"
+        result = f"Codebase Analysis Complete:\n\n"
         result += f"Total files: {stats['total_files']:,}\n"
         result += f"Total directories: {stats['directories']:,}\n"
         result += f"Total lines of code: {stats['total_lines']:,}\n"
@@ -264,7 +264,7 @@ async def analyze_codebase() -> str:
         return result
         
     except Exception as e:
-        return f"❌ Error analyzing codebase: {str(e)}"
+        return f"ERROR Error analyzing codebase: {str(e)}"
 
 @mcp.tool()
 async def run_command(command: str) -> str:
@@ -283,7 +283,7 @@ async def run_command(command: str) -> str:
     try:
         result = subprocess.run(argv, capture_output=True, text=True, timeout=30, cwd=PROJECT_DIR)
 
-        output = f"🖥️ Command: {command}\n"
+        output = f"Command: {command}\n"
         output += f"Exit code: {result.returncode}\n\n"
         
         if result.stdout:
@@ -295,9 +295,9 @@ async def run_command(command: str) -> str:
         return output
         
     except subprocess.TimeoutExpired:
-        return f"❌ Command timed out: {command}"
+        return f"ERROR Command timed out: {command}"
     except Exception as e:
-        return f"❌ Error running command: {str(e)}"
+        return f"ERROR Error running command: {str(e)}"
 
 @mcp.tool()
 async def send_sms_response(phone_number: str, message: str) -> str:
@@ -311,7 +311,7 @@ async def send_sms_response(phone_number: str, message: str) -> str:
     
     try:
         if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
-            return "❌ Twilio credentials not configured"
+            return "ERROR Twilio credentials not configured"
         
         client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         
@@ -325,10 +325,10 @@ async def send_sms_response(phone_number: str, message: str) -> str:
             to=checked_recipient(phone_number)
         )
         
-        return f"✅ SMS sent successfully to {phone_number}\nMessage SID: {message_instance.sid}"
+        return f"OK SMS sent successfully to {phone_number}\nMessage SID: {message_instance.sid}"
         
     except Exception as e:
-        return f"❌ Failed to send SMS: {str(e)}"
+        return f"ERROR Failed to send SMS: {str(e)}"
 
 @mcp.tool()
 async def send_completion_summary(phone_number: str, original_request: str, results: str, actions_performed: str = "") -> str:
@@ -474,9 +474,9 @@ async def complete_sms_task(phone_number: str, original_request: str, task_type:
         return f"Task completed and summary sent!\n\nTask: {task_type}\nActions: {actions}\nSMS Status: {summary_result}\n\nDetailed Results:\n{results}"
         
     except Exception as e:
-        return f"❌ Failed to complete SMS task: {str(e)}"
+        return f"ERROR Failed to complete SMS task: {str(e)}"
 
 if __name__ == "__main__":
     # Initialize and run the server (same as weather)
-    logger.info("🚀 SMS-Cursor MCP Bridge starting...")
+    logger.info("SMS-Cursor MCP Bridge starting...")
     mcp.run(transport='stdio')
