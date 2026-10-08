@@ -59,6 +59,15 @@ def signed_sms(client, sender, body="make a file", signature=None):
     return client.post("/sms", data=form, headers={"X-Twilio-Signature": signature})
 
 
+def test_a_gemini_failure_is_not_texted_back(monkeypatch):
+    def fail(**_):
+        raise RuntimeError("403 Consumer 'api_key:AIzaFAKE-must-not-leak' has been suspended")
+
+    monkeypatch.setattr(web, "client", SimpleNamespace(models=SimpleNamespace(generate_content=fail)))
+    action = web.process_with_gemini("count the tests")
+    assert action.action == web.ActionType.ERROR and "AIzaFAKE" not in action.description
+
+
 def test_sms_without_a_twilio_signature_is_refused(client):
     assert client.post("/sms", data={"From": ALLOWED, "Body": "hi"}).status_code == 403
     assert client.fake.sent == []

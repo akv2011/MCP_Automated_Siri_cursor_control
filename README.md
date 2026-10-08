@@ -88,7 +88,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-35 tests cover the webhook signature and sender checks, the admin token, the SMS allowlist on routes and MCP tools, HTML escaping, and the command parser, including that `ls ; touch pwned` creates nothing. Disabling the guards turns 24 of them red. `scripts/manual/` holds scripts that hit the live Twilio and Gemini APIs by hand.
+36 tests cover Gemini errors staying out of SMS replies, the webhook signature and sender checks, the admin token, the SMS allowlist on routes and MCP tools, HTML escaping, and the command parser, including that `ls ; touch pwned` creates nothing. Disabling the guards turns 24 of them red. `scripts/manual/` holds scripts that hit the live Twilio and Gemini APIs by hand.
 
 ## Notes
 

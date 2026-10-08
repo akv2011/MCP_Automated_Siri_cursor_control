@@ -209,9 +209,10 @@ def process_with_gemini(message):
         )
     except Exception as e:
         print(f"General error: {e}")
+        # this description is texted back; provider errors can quote the API key
         return CursorAction(
             action=ActionType.ERROR,
-            description=f'Error processing with Gemini: {str(e)}',
+            description="Could not process the command with Gemini. Details are in the server log.",
             command=None
         )
 
